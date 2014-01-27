@@ -44,11 +44,13 @@ class Digest extends Plugin implements IHandler {
 	function digestgetcontents() {
 		$article_id = db_escape_string($_REQUEST['article_id']);
 
-		$result = db_query("SELECT content,title,link,marked,published
+		$result = db_query("SELECT content,title,link,marked,published,
+			(SELECT site_url FROM ttrss_feeds WHERE id = feed_id) as site_url,
+			(SELECT hide_images FROM ttrss_feeds WHERE id = feed_id) as hide_images
 			FROM ttrss_entries, ttrss_user_entries
 			WHERE id = '$article_id' AND ref_id = id AND owner_uid = ".$_SESSION['uid']);
 
-		$content = sanitize(db_fetch_result($result, 0, "content"));
+		$content = sanitize(db_fetch_result($result, 0, "content"),sql_bool_to_bool(db_fetch_result($result, 0, "hide_images")),$_SESSION['uid'],db_fetch_result($result, 0, "site_url"));
 		$title = strip_tags(db_fetch_result($result, 0, "title"));
 		$article_url = htmlspecialchars(db_fetch_result($result, 0, "link"));
 		$marked = sql_bool_to_bool(db_fetch_result($result, 0, "marked"));
