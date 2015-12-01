@@ -168,7 +168,9 @@ class Af_Sort_Bayes extends Plugin {
 				FOREIGN KEY (category_id) REFERENCES ${prefix}_categories(id) ON DELETE CASCADE,
 				owner_uid INTEGER NOT NULL,
 				FOREIGN KEY (owner_uid) REFERENCES ttrss_users(id) ON DELETE CASCADE,
-				count BIGINT NOT NULL DEFAULT '0') ENGINE=InnoDB");
+				count BIGINT NOT NULL DEFAULT '0',
+				INDEX word (word)) 
+				ENGINE=InnoDB");
 
 
 		} else {
