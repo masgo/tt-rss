@@ -229,14 +229,14 @@
 			//return array('the', 'that', 'you', 'for', 'and');
 
 			// https://en.wikipedia.org/wiki/Most_common_words_in_English
-			return array('the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'I', 'it', 'for', 'not', 'on', 'with',
+			return array_flip(array('the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'I', 'it', 'for', 'not', 'on', 'with',
 				'he', 'as', 'you', 'do', 'at', 'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her',
 				'she', 'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what', 'so', 'up',
 				'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me', 'when', 'make', 'can', 'like', 'time',
 				'no', 'just', 'him', 'know', 'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could',
 				'them', 'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think',
 				'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first', 'well', 'way', 'even',
-				'new', 'want', 'because', 'any', 'these', 'give', 'day', 'most', 'us', 'read', 'more');
+				'new', 'want', 'because', 'any', 'these', 'give', 'day', 'most', 'us', 'read', 'more'));
 
 		}
 
@@ -261,7 +261,7 @@
 			// remove some tokens
 			while (list(, $token) = each($rawtokens)) {
 				$token = trim($token);
-				if (!(('' == $token) || (mb_strpos($token, "&") !== FALSE) || (mb_strlen($token) < $this->min_token_length) || (mb_strlen($token) > $this->max_token_length) || (preg_match('/^[0-9]+$/', $token)) || (in_array($token, $this->ignore_list)))) {
+				if (!(('' == $token) || (mb_strpos($token, "&") !== FALSE) || (mb_strlen($token) < $this->min_token_length) || (mb_strlen($token) > $this->max_token_length) || (preg_match('/^[0-9]+$/', $token)) || (isset($this->ignore_list[$token])))) {
 					$tokens[$token]++;
 				}
 			}
