@@ -49,7 +49,7 @@
 		var $owner_uid = null;
 		var $max_document_length = 3000; // classifier can't rescale output for very long strings apparently
 
-		function NaiveBayesianStorage($owner_uid) {
+		function __construct($owner_uid) {
 			$this->con = Db::get();
 			$this->owner_uid = $owner_uid;
 

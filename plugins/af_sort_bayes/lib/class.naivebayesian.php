@@ -47,7 +47,7 @@
 		 */
 		var $nbs = null;
 
-		function NaiveBayesian($nbs) {
+		function __construct($nbs) {
 			$this->nbs = $nbs;
 
 			return true;
