@@ -5,7 +5,7 @@ class Af_Sort_Bayes extends Plugin {
 	private $host;
 	private $filters = array();
 	private $dbh;
-	private $score_modifier = 50;
+	private $score_modifier = 25;
 	private $sql_prefix = "ttrss_plugin_af_sort_bayes";
 	private $auto_categorize_threshold = 10000;
 	private $max_document_length = 3000; // classifier can't rescale output for very long strings apparently
@@ -66,30 +66,46 @@ class Af_Sort_Bayes extends Plugin {
 			if ($train_up) {
 				switch ($current_category) {
 					case "UGLY":
-						$dst_category = "GOOD";
+						$dst_category = "semiGOOD";
 						$score = $this->score_modifier;
 						break;
 					case "BAD":
-						$dst_category = "UGLY";
-						$score = 0;
+						$dst_category = "semiBAD";
+						$score = -$this->score_modifier;
 						break;
 					case "GOOD":
 						$dst_category = "GOOD";
 						break;
+					case "semiGOOD":
+						$dst_category = "GOOD";
+						$score = 2*$this->score_modifier;
+						break;						
+					case "semiBAD":
+						$dst_category = "UGLY";
+						$score = 0;
+						break;						
 				}
 			} else {
 				switch ($current_category) {
 					case "UGLY":
-						$dst_category = "BAD";
+						$dst_category = "semiBAD";
 						$score = -$this->score_modifier;
 						break;
 					case "BAD":
 						$dst_category = "BAD";
 						break;
 					case "GOOD":
+						$dst_category = "semiGOOD";
+						$score = $this->score_modifier;
+						break;
+					case "semiGOOD":
 						$dst_category = "UGLY";
 						$score = 0;
 						break;
+					case "semiBAD":
+						$dst_category = "BAD";
+						$score = -2*$this->score_modifier;
+						break;						
 				}
 			}
 
@@ -203,8 +219,10 @@ class Af_Sort_Bayes extends Plugin {
 
 			if ($this->dbh->num_rows($result) == 0) {
 				$this->dbh->query("INSERT INTO ${prefix}_categories (category, owner_uid) VALUES ('GOOD', $owner_uid)");
-				$this->dbh->query("INSERT INTO ${prefix}_categories (category, owner_uid) VALUES ('BAD', $owner_uid)");
+				$this->dbh->query("INSERT INTO ${prefix}_categories (category, owner_uid) VALUES ('semiGOOD', $owner_uid)");
 				$this->dbh->query("INSERT INTO ${prefix}_categories (category, owner_uid) VALUES ('UGLY', $owner_uid)");
+				$this->dbh->query("INSERT INTO ${prefix}_categories (category, owner_uid) VALUES ('semiBAD', $owner_uid)");
+				$this->dbh->query("INSERT INTO ${prefix}_categories (category, owner_uid) VALUES ('BAD', $owner_uid)");
 			}
 		}
 
@@ -293,6 +311,8 @@ class Af_Sort_Bayes extends Plugin {
 			$id_good = 0;
 			$id_ugly = 0;
 			$id_bad = 0;
+			$id_semibad = 0;
+			$id_semigood = 0;
 
 			foreach ($categories as $id => $cat) {
 				if ($cat["category"] == "GOOD") {
@@ -302,6 +322,10 @@ class Af_Sort_Bayes extends Plugin {
 					$count_neutral += $cat["word_count"];
 				} else if ($cat["category"] == "BAD") {
 					$id_bad = $id;
+				} else if ($cat["category"] == "semiBAD") {
+					$id_semibad = $id;
+				} else if ($cat["category"] == "semiGOOD") {
+					$id_semigood = $id;
 				}
 			}
 
@@ -316,16 +340,24 @@ class Af_Sort_Bayes extends Plugin {
 
 				//print_r($result);
 
-				if (count($result) == 3) {
+				if (count($result) == 5) {
 					$prob_good = $result[$id_good];
 					$prob_bad = $result[$id_bad];
+					$prob_semibad = $result[$id_semibad];
+					$prob_semigood = $result[$id_semigood];
 
 					if (!is_nan($prob_good) && $prob_good > 0.90) {
 						$dst_category = $id_good;
-						$article["score_modifier"] += $this->score_modifier;
+						$article["score_modifier"] += 2*$this->score_modifier;
 					} else if (!is_nan($prob_bad) && $prob_bad > 0.90) {
 						$dst_category = $id_bad;
+						$article["score_modifier"] -= 2*$this->score_modifier;
+					} else if (!is_nan($prob_semibad) && $prob_semibad > 0.90) {
+						$dst_category = $id_semibad;
 						$article["score_modifier"] -= $this->score_modifier;
+					} else if (!is_nan($prob_semigood) && $prob_semigood > 0.90) {
+						$dst_category = $id_semigood;
+						$article["score_modifier"] += $this->score_modifier;
 					}
 				}
 
