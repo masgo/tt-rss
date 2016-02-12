@@ -131,8 +131,34 @@ class Af_Sort_Bayes extends Plugin {
 		return file_get_contents(__DIR__ . "/init.js");
 	}
 
+	function showArticleCategory($article_id) {
+		$retValue = "ERROR in showArticleCategory";
+		$result = $this->dbh->query("SELECT score, guid FROM ttrss_entries, ttrss_user_entries WHERE ref_id = id AND id = " .
+			$article_id . " AND owner_uid = " . $_SESSION["uid"]);
+
+		if ($this->dbh->num_rows($result) != 0) {
+			$guid = $this->dbh->fetch_result($result, 0, "guid");
+			$score = $this->dbh->fetch_result($result, 0, "score");
+
+			$nbs = new NaiveBayesianStorage($_SESSION["uid"]);
+
+			$categories = $nbs->getCategories();
+
+			$ref = $nbs->getReference($guid, false);
+
+			$current_cat = isset($ref["category_id"]) ? $categories[$ref["category_id"]]["category"] : "N/A";
+
+			$retValue = "<span>" . T_sprintf(" %s | %s ", $score, $current_cat) . "</span>";
+		} else {
+			print_error("Article not found");
+		}
+		
+		return $retValue;
+	}		
+	
 	function hook_article_button($line) {
-		return "<img src=\"plugins.local/af_sort_bayes/thumb_up.png\"
+		return $this->showArticleCategory($line["id"]) . 
+		"<img src=\"plugins.local/af_sort_bayes/thumb_up.png\"
 			style=\"cursor : pointer\" style=\"cursor : pointer\"
 			onclick=\"bayesTrain(".$line["id"].", true, event)\"
 			class='tagsPic' title='".__('+1')."'>" .
@@ -440,7 +466,7 @@ class Af_Sort_Bayes extends Plugin {
 		print "</div>";
 
 	}
-
+	
 	function api_version() {
 		return 2;
 	}
